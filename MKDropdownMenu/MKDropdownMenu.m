@@ -330,13 +330,15 @@ static UIImage *disclosureIndicatorImage = nil;
 #pragma mark Controller
 
 @interface MKDropdownMenuContentViewController : UIViewController <UITableViewDataSource, UITableViewDelegate, UIGestureRecognizerDelegate> {
-    NSLayoutConstraint *_heightConstraint;
-    NSLayoutConstraint *_topConstraint;
     NSLayoutConstraint *_leftConstraint;
     NSLayoutConstraint *_bottomConstraint;
     NSLayoutConstraint *_rightConstraint;
+    NSLayoutConstraint *_topConstraint;
     BOOL _didSetRoundedCorners;
 }
+@property (strong, nonatomic) NSLayoutConstraint *heightConstraint;
+@property (strong, nonatomic) NSLayoutConstraint *heightHolderConstraint;
+@property (strong, nonatomic) NSLayoutConstraint *topHolderConstraint;
 @property (weak, nonatomic) id<MKDropdownMenuContentViewControllerDelegate> delegate;
 
 @property (strong, nonatomic) UIView *containerView;
@@ -486,11 +488,11 @@ static UIImage *disclosureIndicatorImage = nil;
     /* Add subviews */
     
     [self.view addSubview:self.containerView];
+    [self.tableContainerView addSubview:self.tableView];
     [self.containerView addSubview:self.shadowView];
     [self.containerView addSubview:self.borderView];
     [self.containerView addSubview:self.separatorContainerView];
     [self.containerView addSubview:self.tableContainerView];
-    [self.tableContainerView addSubview:self.tableView];
     
     
     /* Setup constraints */
@@ -501,11 +503,13 @@ static UIImage *disclosureIndicatorImage = nil;
     _leftConstraint = [NSLayoutConstraint constraintWithItem:self.containerView attribute:NSLayoutAttributeLeading relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeLeading multiplier:1.0 constant:0.0];
     _rightConstraint = [NSLayoutConstraint constraintWithItem:self.view attribute:NSLayoutAttributeTrailing relatedBy:NSLayoutRelationEqual toItem:self.containerView attribute:NSLayoutAttributeTrailing multiplier:1.0 constant:0.0];
     
-    [self.view addConstraints:@[_leftConstraint, _rightConstraint,
-                                [NSLayoutConstraint constraintWithItem:self.containerView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTop multiplier:1.0 constant:0.0]]];
+    _heightHolderConstraint = [NSLayoutConstraint constraintWithItem:self.containerView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:kDefaultRowHeight];
+    
+    _topHolderConstraint = [NSLayoutConstraint constraintWithItem:self.containerView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTop multiplier:1.0 constant:0.0];
+    [self.view addConstraints:@[_leftConstraint, _rightConstraint, _topHolderConstraint]];
     
     _topConstraint = [NSLayoutConstraint constraintWithItem:self.separatorContainerView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:0.0];
-    [self.separatorContainerView addConstraint:_topConstraint];
+    
     
     [self.containerView addConstraints:@[[NSLayoutConstraint constraintWithItem:self.separatorContainerView
                                                                       attribute:NSLayoutAttributeLeft
@@ -671,6 +675,10 @@ static UIImage *disclosureIndicatorImage = nil;
 }
 
 - (void)updateContainerHeight {
+    if (_heightConstraint.constant <= self.contentHeight) {
+        [self.containerView layoutIfNeeded];
+        return;
+    }
     _heightConstraint.constant = self.contentHeight;
     [self.containerView layoutIfNeeded];
 }
@@ -918,9 +926,13 @@ static const CGFloat kScrollViewBottomSpace = 5;
     }
     
     // Set frame to dropdown's content TableView
-    self.controller.view.frame = CGRectMake(CGRectGetMinX(containerView.bounds), topOffset,
-                                            CGRectGetWidth(containerView.bounds), height - topOffset);
+    self.controller.view.frame = CGRectMake(CGRectGetMinX(containerView.bounds), 0,
+                                            CGRectGetWidth(containerView.bounds), height);
     
+    self.controller.containerView.frame = CGRectMake(CGRectGetMinX(containerView.bounds), topOffset,
+                                               CGRectGetWidth(containerView.bounds), height - topOffset);
+    self.controller.topHolderConstraint.constant = topOffset;
+    self.controller.heightConstraint.constant = height - topOffset;
     // Show dropdown
     [containerView addSubview:self.controller.view];
     [self.controller.view layoutIfNeeded];

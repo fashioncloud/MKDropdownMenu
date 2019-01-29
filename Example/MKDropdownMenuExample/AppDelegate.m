@@ -8,6 +8,19 @@
 
 #import "AppDelegate.h"
 
+@interface CustomWindow : UIWindow
+
+@end
+
+@implementation CustomWindow
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *viewToHit = [super hitTest:point withEvent:event];
+    return viewToHit;
+}
+
+@end
+
 @interface AppDelegate ()
 
 @end
@@ -16,7 +29,11 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    self.window = [[CustomWindow alloc] init];
+    
+    UIStoryboard *storyBoard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+    UIViewController *initViewController = [storyBoard instantiateInitialViewController];
+    [self.window setRootViewController:initViewController];
     return YES;
 }
 
